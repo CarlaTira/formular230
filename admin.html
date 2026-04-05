@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Formular 230</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- pdf-lib for PDF auto-fill (future use) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    body { background:#f0f4ff; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none} }
+    .fade-in { animation:fadeIn .3s ease both; }
+    table { border-collapse:collapse; width:100%; }
+    th { position:sticky; top:0; z-index:10; }
+    tr:hover td { background:#eff6ff; }
+  </style>
+</head>
+<body class="min-h-screen p-6">
+
+  <!-- Password gate -->
+  <div id="loginGate" class="fixed inset-0 bg-gray-900/80 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-80 fade-in">
+      <h2 class="text-xl font-bold text-gray-800 mb-1">🔐 Admin Login</h2>
+      <p class="text-xs text-gray-500 mb-4">Acces restricționat</p>
+      <input id="passInput" type="password" placeholder="Parolă admin"
+             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3
+                    focus:outline-none focus:ring-2 focus:ring-blue-400" />
+      <button onclick="checkPass()"
+              class="w-full bg-blue-700 text-white py-2 rounded-lg font-semibold hover:bg-blue-800 transition">
+        Intră
+      </button>
+      <p id="loginErr" class="text-xs text-red-500 mt-2 hidden">Parolă incorectă</p>
+    </div>
+  </div>
+
+  <div id="adminPanel" class="max-w-7xl mx-auto hidden">
+
+    <!-- Header -->
+    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-blue-800">📋 Admin – Formular 230</h1>
+        <p class="text-sm text-gray-500" id="recordCount">Se încarcă datele...</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="loadData()"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+          🔄 Reîncarcă
+        </button>
+        <button onclick="exportExcel()"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
+          📥 Export Excel
+        </button>
+        <button onclick="showPdfModal()"
+                class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 transition">
+          📄 Generează PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Search & filter -->
+    <div class="bg-white rounded-xl shadow p-4 mb-4 flex flex-wrap gap-3 items-center">
+      <input id="searchInput" type="text" placeholder="🔍 Caută după nume, CNP, email..."
+             oninput="filterTable()"
+             class="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 min-w-48
+                    focus:outline-none focus:ring-2 focus:ring-blue-400" />
+      <select id="countyFilter" onchange="filterTable()"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <option value="">Toate județele</option>
+      </select>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow overflow-auto" style="max-height:60vh">
+      <table id="dataTable">
+        <thead>
+          <tr id="tableHead" class="bg-blue-800 text-white text-xs uppercase tracking-wide"></tr>
+        </thead>
+        <tbody id="tableBody" class="text-sm divide-y divide-gray-100"></tbody>
+      </table>
+      <div id="emptyState" class="hidden text-center py-16 text-gray-400">
+        <div class="text-4xl mb-2">📭</div>
+        <p>Nu există înregistrări</p>
+      </div>
+    </div>
+
+    <!-- PDF Modal -->
+    <div id="pdfModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md fade-in">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">📄 Generare PDF Formular 230</h3>
+        <p class="text-sm text-gray-600 mb-4">
+          Selectați un rând din tabel și apăsați butonul pentru a auto-completa PDF-ul oficial ANAF.
+        </p>
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-700 mb-4">
+          ⚙️ <strong>Funcționalitate în curs de dezvoltare.</strong>
+          Încărcați PDF-ul oficial ANAF (F230) pentru a activa auto-completarea.
+        </div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Încărcați șablonul PDF oficial ANAF:
+        </label>
+        <input type="file" id="pdfTemplate" accept=".pdf"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4" />
+        <div class="flex gap-3">
+          <button onclick="generatePDF()"
+                  class="flex-1 bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition">
+            Generează PDF
+          </button>
+          <button onclick="document.getElementById('pdfModal').classList.add('hidden')"
+                  class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-300 transition">
+            Anulează
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ─── CONFIG ──────────────────────────────────────────────────────────────
+    // Replace with your Apps Script URL (same as in index.html)
+    const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+    // Simple client-side password (change this!)
+    // For production: use proper auth (Firebase Auth, Netlify Identity, etc.)
+    const ADMIN_PASSWORD = 'admin230'; // ← CHANGE THIS
+
+    // ─── Auth ─────────────────────────────────────────────────────────────────
+    function checkPass() {
+      const val = document.getElementById('passInput').value;
+      if (val === ADMIN_PASSWORD) {
+        document.getElementById('loginGate').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
+        loadData();
+      } else {
+        document.getElementById('loginErr').classList.remove('hidden');
+      }
+    }
+    document.getElementById('passInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkPass();
+    });
+
+    // ─── Data ─────────────────────────────────────────────────────────────────
+    let allRows    = [];
+    let allHeaders = [];
+    let selectedRow = null;
+
+    async function loadData() {
+      document.getElementById('recordCount').textContent = 'Se încarcă...';
+      try {
+        if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+          // Demo data for development
+          allHeaders = ['Timestamp','Nume','Prenume','Inițiala tatălui','CNP','Email','Telefon',
+                        'Strada','Număr','Bloc','Scară','Etaj','Apartament','Județ/Sector','Localitate',
+                        'Entitate beneficiară','CIF entitate','Semnătură'];
+          allRows = [
+            ['2026-04-05T10:00:00Z','Popescu','Ion','V.','1234567890123',
+             'ion@email.ro','0712345678','Florilor','10','A1','1','3','15','Ilfov','București',
+             'Asociația Demo','12345678','(semnătură)']
+          ];
+        } else {
+          const resp = await fetch(APPS_SCRIPT_URL + '?action=getAll');
+          const data = await resp.json();
+          allHeaders = data.headers;
+          allRows    = data.rows;
+        }
+        renderTable(allHeaders, allRows);
+        populateCountyFilter();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('recordCount').textContent = '❌ Eroare la încărcare';
+      }
+    }
+
+    function renderTable(headers, rows) {
+      // Head
+      const head = document.getElementById('tableHead');
+      head.innerHTML = '<th class="px-3 py-3 text-left">#</th>' +
+        headers.map(h => `<th class="px-3 py-3 text-left whitespace-nowrap">${h}</th>`).join('') +
+        '<th class="px-3 py-3">Acțiuni</th>';
+
+      // Body
+      const body = document.getElementById('tableBody');
+      body.innerHTML = '';
+
+      if (!rows.length) {
+        document.getElementById('emptyState').classList.remove('hidden');
+        document.getElementById('recordCount').textContent = '0 înregistrări';
+        return;
+      }
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('recordCount').textContent = `${rows.length} înregistrări`;
+
+      rows.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        tr.className = 'cursor-pointer transition';
+        tr.onclick = () => selectRow(tr, row);
+        tr.innerHTML = `<td class="px-3 py-2 text-gray-400 font-mono text-xs">${i+1}</td>` +
+          row.map(cell => {
+            const isImg = typeof cell === 'string' && cell.startsWith('http');
+            return isImg
+              ? `<td class="px-3 py-2"><a href="${cell}" target="_blank" class="text-blue-500 underline text-xs">🖊️ Vezi</a></td>`
+              : `<td class="px-3 py-2 whitespace-nowrap max-w-xs truncate" title="${cell}">${cell}</td>`;
+          }).join('') +
+          `<td class="px-3 py-2 text-center">
+            <button onclick="event.stopPropagation();selectAndPDF(${i})"
+                    class="text-purple-600 hover:text-purple-800 text-xs font-semibold">📄 PDF</button>
+          </td>`;
+        body.appendChild(tr);
+      });
+    }
+
+    function selectRow(tr, row) {
+      document.querySelectorAll('#tableBody tr').forEach(r => r.classList.remove('bg-blue-50','ring-2','ring-blue-300'));
+      tr.classList.add('bg-blue-50');
+      selectedRow = row;
+    }
+
+    function selectAndPDF(i) {
+      selectedRow = allRows[i];
+      showPdfModal();
+    }
+
+    // ─── Filter ───────────────────────────────────────────────────────────────
+    function filterTable() {
+      const q      = document.getElementById('searchInput').value.toLowerCase();
+      const county = document.getElementById('countyFilter').value.toLowerCase();
+      const countyIdx = allHeaders.indexOf('Județ/Sector');
+
+      const filtered = allRows.filter(row => {
+        const matchQ      = !q || row.some(c => String(c).toLowerCase().includes(q));
+        const matchCounty = !county || String(row[countyIdx] || '').toLowerCase() === county;
+        return matchQ && matchCounty;
+      });
+      renderTable(allHeaders, filtered);
+    }
+
+    function populateCountyFilter() {
+      const idx    = allHeaders.indexOf('Județ/Sector');
+      const sel    = document.getElementById('countyFilter');
+      const unique = [...new Set(allRows.map(r => r[idx]).filter(Boolean))].sort();
+      sel.innerHTML = '<option value="">Toate județele</option>' +
+        unique.map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('');
+    }
+
+    // ─── Excel Export ─────────────────────────────────────────────────────────
+    function exportExcel() {
+      const wsData = [allHeaders, ...allRows];
+      const ws     = XLSX.utils.aoa_to_sheet(wsData);
+      const wb     = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Formular230');
+
+      // Style header row
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (!ws[addr]) continue;
+        ws[addr].s = { font: { bold: true, color: { rgb: 'FFFFFF' } },
+                       fill: { fgColor: { rgb: '003DA5' } } };
+      }
+
+      const date = new Date().toISOString().slice(0,10);
+      XLSX.writeFile(wb, `Formular230_${date}.xlsx`);
+    }
+
+    // ─── PDF Modal ────────────────────────────────────────────────────────────
+    function showPdfModal() {
+      document.getElementById('pdfModal').classList.remove('hidden');
+    }
+
+    // ─── PDF Generation (pdf-lib) ─────────────────────────────────────────────
+    async function generatePDF() {
+      if (!selectedRow) {
+        alert('Selectați mai întâi un rând din tabel.');
+        return;
+      }
+      const fileInput = document.getElementById('pdfTemplate');
+      if (!fileInput.files.length) {
+        alert('Vă rugăm să încărcați șablonul PDF oficial ANAF.');
+        return;
+      }
+
+      try {
+        const { PDFDocument, rgb, StandardFonts } = PDFLib;
+        const fileBytes = await fileInput.files[0].arrayBuffer();
+        const pdfDoc    = await PDFDocument.load(fileBytes);
+        const font      = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const pages     = pdfDoc.getPages();
+        const page      = pages[0];
+
+        // Map row data to field positions
+        // NOTE: These coordinates need calibration based on the actual ANAF PDF layout.
+        // Use the coordinate helper below to find exact positions.
+        const rowObj = {};
+        allHeaders.forEach((h, i) => { rowObj[h] = selectedRow[i] || ''; });
+
+        const fields = [
+          { text: rowObj['Nume'] + ' ' + rowObj['Prenume'], x: 150, y: 650, size: 10 },
+          { text: rowObj['CNP'],    x: 400, y: 650, size: 10 },
+          { text: rowObj['Strada'], x: 150, y: 620, size: 10 },
+          { text: rowObj['Număr'],  x: 350, y: 620, size: 10 },
+          { text: rowObj['Bloc'],   x: 410, y: 620, size: 10 },
+          { text: rowObj['Localitate'] + ', ' + rowObj['Județ/Sector'], x: 150, y: 590, size: 10 },
+        ];
+
+        fields.forEach(f => {
+          page.drawText(f.text, {
+            x: f.x, y: f.y,
+            size: f.size || 10,
+            font,
+            color: rgb(0, 0, 0)
+          });
+        });
+
+        const pdfBytes = await pdfDoc.save();
+        const blob     = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url      = URL.createObjectURL(blob);
+        const a        = document.createElement('a');
+        a.href         = url;
+        a.download     = `F230_${rowObj['CNP']}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        document.getElementById('pdfModal').classList.add('hidden');
+      } catch (err) {
+        console.error(err);
+        alert('Eroare la generarea PDF: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

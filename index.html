@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formular 230 – Redirecționare 3.5%</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            anaf: { blue: '#003DA5', light: '#e8f0fe', border: '#b3c7f7' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #f0f4ff; }
+    .form-label { display:block; font-size:.875rem; font-weight:600; color:#374151; margin-bottom:.25rem; }
+    .form-input {
+      width:100%; border:1px solid #d1d5db; border-radius:.5rem;
+      padding:.5rem .75rem; font-size:.875rem; background:#fff;
+      transition: box-shadow .15s, border-color .15s;
+    }
+    .form-input:focus { outline:none; box-shadow:0 0 0 2px #93c5fd; border-color:transparent; }
+    .form-input.error { border-color:#f87171; box-shadow:0 0 0 2px #fca5a5; }
+    #signaturePad { touch-action: none; }
+    .section-title {
+      font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+      color:#003DA5; border-bottom:1px solid #b3c7f7; padding-bottom:.25rem;
+      margin-bottom:1rem; margin-top:1.5rem;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .fade-in { animation: fadeIn .4s ease both; }
+  </style>
+</head>
+<body class="min-h-screen flex items-start justify-center py-8 px-4">
+
+  <!-- Success overlay -->
+  <div id="successOverlay"
+       class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md text-center fade-in">
+      <div class="text-6xl mb-4">✅</div>
+      <h2 class="text-2xl font-bold text-green-600 mb-2">Datele au fost trimise!</h2>
+      <p class="text-gray-600 mb-6">
+        Formularul 230 a fost înregistrat cu succes.<br>
+        Veți primi o confirmare pe email.
+      </p>
+      <button onclick="resetForm()"
+              class="bg-anaf-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-800 transition">
+        Completează alt formular
+      </button>
+    </div>
+  </div>
+
+  <div class="w-full max-w-2xl">
+
+    <!-- Header -->
+    <div class="bg-anaf-blue rounded-2xl shadow-lg text-white px-8 py-6 mb-6 fade-in">
+      <div class="flex items-center gap-4">
+        <div class="text-5xl">🇷🇴</div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">Formular 230</h1>
+          <p class="text-blue-200 text-sm mt-1">
+            Cerere privind destinația sumei reprezentând 3,5% din impozitul anual datorat
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form card -->
+    <div class="bg-white rounded-2xl shadow-md px-8 py-6 fade-in">
+      <form id="form230" novalidate>
+
+        <!-- SECTION: Beneficiar -->
+        <div class="bg-anaf-light border border-anaf-border rounded-xl px-5 py-4 mb-4">
+          <p class="text-sm text-anaf-blue font-semibold">
+            🏢 <span class="font-bold">Entitate beneficiară:</span>
+            Asociația / ONG-ul căruia îi direcționați cei 3,5%
+          </p>
+          <p class="text-xs text-gray-500 mt-1">
+            (Completat de organizație – nu este necesar să îl modificați)
+          </p>
+          <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">Denumire entitate</label>
+              <input id="entityName" class="form-input bg-gray-50" type="text"
+                     value="" placeholder="ex. Asociația Carla" />
+            </div>
+            <div>
+              <label class="form-label">CIF / CUI entitate</label>
+              <input id="entityCIF" class="form-input bg-gray-50" type="text"
+                     value="" placeholder="ex. 12345678" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: Date personale -->
+        <p class="section-title">👤 Date personale</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label for="lastName" class="form-label">Nume <span class="text-red-500">*</span></label>
+            <input id="lastName" class="form-input" type="text" placeholder="Popescu"
+                   autocomplete="family-name" required />
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-lastName">Câmp obligatoriu</p>
+          </div>
+          <div>
+            <label for="firstName" class="form-label">Prenume <span class="text-red-500">*</span></label>
+            <input id="firstName" class="form-input" type="text" placeholder="Ion"
+                   autocomplete="given-name" required />
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-firstName">Câmp obligatoriu</p>
+          </div>
+          <div>
+            <label for="fatherInitial" class="form-label">Inițiala tatălui <span class="text-red-500">*</span></label>
+            <input id="fatherInitial" class="form-input" type="text" placeholder="V."
+                   maxlength="3" required />
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-fatherInitial">Câmp obligatoriu</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label for="cnp" class="form-label">CNP <span class="text-red-500">*</span></label>
+            <input id="cnp" class="form-input" type="text" placeholder="1234567890123"
+                   maxlength="13" inputmode="numeric" required />
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-cnp">CNP invalid (13 cifre)</p>
+          </div>
+          <div>
+            <label for="email" class="form-label">Email <span class="text-red-500">*</span></label>
+            <input id="email" class="form-input" type="email" placeholder="ion.popescu@email.ro"
+                   autocomplete="email" required />
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-email">Email invalid</p>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label for="phone" class="form-label">Telefon</label>
+          <input id="phone" class="form-input" type="tel" placeholder="07xx xxx xxx"
+                 autocomplete="tel" inputmode="tel" />
+        </div>
+
+        <!-- SECTION: Adresă -->
+        <p class="section-title">🏠 Adresă de domiciliu</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="sm:col-span-2">
+            <label for="street" class="form-label">Strada <span class="text-red-500">*</span></label>
+            <input id="street" class="form-input" type="text" placeholder="Strada Florilor"
+                   autocomplete="street-address" required />
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-street">Câmp obligatoriu</p>
+          </div>
+          <div>
+            <label for="number" class="form-label">Număr <span class="text-red-500">*</span></label>
+            <input id="number" class="form-input" type="text" placeholder="10" required />
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-number">Câmp obligatoriu</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+          <div>
+            <label for="building" class="form-label">Bloc</label>
+            <input id="building" class="form-input" type="text" placeholder="A1" />
+          </div>
+          <div>
+            <label for="entrance" class="form-label">Scară</label>
+            <input id="entrance" class="form-input" type="text" placeholder="2" />
+          </div>
+          <div>
+            <label for="floor" class="form-label">Etaj</label>
+            <input id="floor" class="form-input" type="text" placeholder="3" />
+          </div>
+          <div>
+            <label for="apartment" class="form-label">Apartament</label>
+            <input id="apartment" class="form-input" type="text" placeholder="15" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label for="county" class="form-label">Județ / Sector <span class="text-red-500">*</span></label>
+            <select id="county" class="form-input" required>
+              <option value="">-- Selectați --</option>
+              <option>Alba</option><option>Arad</option><option>Argeș</option>
+              <option>Bacău</option><option>Bihor</option><option>Bistrița-Năsăud</option>
+              <option>Botoșani</option><option>Brașov</option><option>Brăila</option>
+              <option>Buzău</option><option>Caraș-Severin</option><option>Călărași</option>
+              <option>Cluj</option><option>Constanța</option><option>Covasna</option>
+              <option>Dâmbovița</option><option>Dolj</option><option>Galați</option>
+              <option>Giurgiu</option><option>Gorj</option><option>Harghita</option>
+              <option>Hunedoara</option><option>Ialomița</option><option>Iași</option>
+              <option>Ilfov</option><option>Maramureș</option><option>Mehedinți</option>
+              <option>Mureș</option><option>Neamț</option><option>Olt</option>
+              <option>Prahova</option><option>Satu Mare</option><option>Sălaj</option>
+              <option>Sibiu</option><option>Suceava</option><option>Teleorman</option>
+              <option>Timiș</option><option>Tulcea</option><option>Vaslui</option>
+              <option>Vâlcea</option><option>Vrancea</option>
+              <option>Sector 1</option><option>Sector 2</option><option>Sector 3</option>
+              <option>Sector 4</option><option>Sector 5</option><option>Sector 6</option>
+            </select>
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-county">Câmp obligatoriu</p>
+          </div>
+          <div>
+            <label for="city" class="form-label">Localitate <span class="text-red-500">*</span></label>
+            <input id="city" class="form-input" type="text" placeholder="București"
+                   autocomplete="address-level2" required />
+            <p class="text-xs text-red-500 mt-1 hidden" id="err-city">Câmp obligatoriu</p>
+          </div>
+        </div>
+
+        <!-- SECTION: Semnătură -->
+        <p class="section-title">✍️ Semnătură olografă</p>
+
+        <div class="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden bg-gray-50">
+          <div class="flex justify-between items-center px-4 py-2 bg-gray-100 border-b border-gray-200">
+            <span class="text-xs text-gray-500">Desenați semnătura în spațiul de mai jos</span>
+            <button type="button" onclick="clearSignature()"
+                    class="text-xs text-red-500 hover:text-red-700 font-semibold transition">
+              🗑️ Șterge
+            </button>
+          </div>
+          <canvas id="signaturePad" class="w-full block cursor-crosshair"
+                  style="height:160px; background:#fff;"></canvas>
+        </div>
+        <p class="text-xs text-red-500 mt-1 hidden" id="err-signature">Semnătura este obligatorie</p>
+
+        <!-- SECTION: Consimțământ -->
+        <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4">
+          <label class="flex gap-3 cursor-pointer">
+            <input type="checkbox" id="gdprConsent" class="mt-0.5 w-4 h-4 accent-blue-600" required />
+            <span class="text-xs text-gray-700">
+              Sunt de acord cu prelucrarea datelor cu caracter personal în scopul completării
+              și depunerii Formularului 230, conform
+              <a href="https://legislatie.just.ro/Public/DetaliiDocument/211632"
+                 target="_blank" class="text-blue-600 underline">Regulamentului GDPR</a>.
+              Datele nu vor fi transmise către terți.
+            </span>
+          </label>
+          <p class="text-xs text-red-500 mt-2 hidden" id="err-gdpr">
+            Trebuie să acceptați prelucrarea datelor
+          </p>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" id="submitBtn"
+                class="mt-6 w-full bg-anaf-blue text-white font-bold py-3 rounded-xl
+                       hover:bg-blue-800 active:scale-95 transition-all text-base shadow-md
+                       flex items-center justify-center gap-2">
+          <span id="submitText">📤 Trimite formularul</span>
+          <svg id="spinner" class="hidden animate-spin h-5 w-5 text-white"
+               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 20 12 20 12H4z"/>
+          </svg>
+        </button>
+
+        <p class="text-center text-xs text-gray-400 mt-4">
+          Datele sunt transmise în siguranță și stocate exclusiv de organizație.
+        </p>
+
+      </form>
+    </div>
+
+    <p class="text-center text-xs text-gray-400 mt-4 mb-8">
+      Formular 230 · © 2026 · Powered by GitHub Pages
+    </p>
+  </div>
+
+  <!-- signature_pad library -->
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+
+  <script>
+    // ─── Signature Pad Setup ────────────────────────────────────────────────
+    const canvas = document.getElementById('signaturePad');
+    const signaturePad = new SignaturePad(canvas, {
+      minWidth: 1,
+      maxWidth: 3,
+      penColor: '#1a1a2e'
+    });
+
+    function resizeCanvas() {
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      const data  = signaturePad.toData();
+      canvas.width  = canvas.offsetWidth  * ratio;
+      canvas.height = canvas.offsetHeight * ratio;
+      canvas.getContext('2d').scale(ratio, ratio);
+      signaturePad.clear();
+      signaturePad.fromData(data);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    // Delay to let Tailwind/CSS render
+    setTimeout(resizeCanvas, 100);
+
+    function clearSignature() { signaturePad.clear(); }
+
+    // ─── Validation ─────────────────────────────────────────────────────────
+    const required = ['lastName','firstName','fatherInitial','cnp','email','street','number','county','city'];
+
+    function showErr(id, msg) {
+      const el = document.getElementById('err-' + id);
+      const inp = document.getElementById(id);
+      if (el) { el.textContent = msg || el.textContent; el.classList.remove('hidden'); }
+      if (inp) inp.classList.add('error');
+    }
+    function hideErr(id) {
+      const el = document.getElementById('err-' + id);
+      const inp = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+      if (inp) inp.classList.remove('error');
+    }
+
+    // Live validation
+    required.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', () => { if (el.value.trim()) hideErr(id); });
+    });
+
+    function validateForm() {
+      let valid = true;
+      required.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || !el.value.trim()) { showErr(id); valid = false; }
+        else hideErr(id);
+      });
+      // CNP
+      const cnp = document.getElementById('cnp').value.trim();
+      if (cnp && !/^\d{13}$/.test(cnp)) { showErr('cnp', 'CNP invalid (13 cifre)'); valid = false; }
+      // Email
+      const email = document.getElementById('email').value.trim();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showErr('email', 'Email invalid'); valid = false;
+      }
+      // Signature
+      if (signaturePad.isEmpty()) {
+        document.getElementById('err-signature').classList.remove('hidden'); valid = false;
+      } else {
+        document.getElementById('err-signature').classList.add('hidden');
+      }
+      // GDPR
+      if (!document.getElementById('gdprConsent').checked) {
+        document.getElementById('err-gdpr').classList.remove('hidden'); valid = false;
+      } else {
+        document.getElementById('err-gdpr').classList.add('hidden');
+      }
+      return valid;
+    }
+
+    // ─── Google Apps Script Web App URL ─────────────────────────────────────
+    // INSTRUCTIONS: Replace the URL below with your deployed Apps Script URL
+    // See SETUP.md for step-by-step instructions.
+    const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+    // ─── Form Submit ─────────────────────────────────────────────────────────
+    document.getElementById('form230').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!validateForm()) {
+        // Scroll to first error
+        const firstErr = document.querySelector('.error, [id^="err-"]:not(.hidden)');
+        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      // UI: loading state
+      const btn = document.getElementById('submitBtn');
+      document.getElementById('submitText').textContent = 'Se trimite...';
+      document.getElementById('spinner').classList.remove('hidden');
+      btn.disabled = true;
+
+      const payload = {
+        timestamp:     new Date().toISOString(),
+        lastName:      document.getElementById('lastName').value.trim(),
+        firstName:     document.getElementById('firstName').value.trim(),
+        fatherInitial: document.getElementById('fatherInitial').value.trim(),
+        cnp:           document.getElementById('cnp').value.trim(),
+        email:         document.getElementById('email').value.trim(),
+        phone:         document.getElementById('phone').value.trim(),
+        street:        document.getElementById('street').value.trim(),
+        number:        document.getElementById('number').value.trim(),
+        building:      document.getElementById('building').value.trim(),
+        entrance:      document.getElementById('entrance').value.trim(),
+        floor:         document.getElementById('floor').value.trim(),
+        apartment:     document.getElementById('apartment').value.trim(),
+        county:        document.getElementById('county').value.trim(),
+        city:          document.getElementById('city').value.trim(),
+        entityName:    document.getElementById('entityName').value.trim(),
+        entityCIF:     document.getElementById('entityCIF').value.trim(),
+        signature:     signaturePad.toDataURL('image/png')  // base64 PNG
+      };
+
+      try {
+        if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+          // Dev mode: just log and show success
+          console.table(payload);
+          console.info('ℹ️  Set APPS_SCRIPT_URL in index.html to enable real submission.');
+          showSuccess();
+        } else {
+          const resp = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            body:   JSON.stringify(payload)
+          });
+          const result = await resp.json();
+          if (result.status === 'ok') {
+            showSuccess();
+          } else {
+            throw new Error(result.message || 'Server error');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        alert('❌ Eroare la trimitere: ' + err.message + '\nVă rugăm să încercați din nou.');
+      } finally {
+        document.getElementById('submitText').textContent = '📤 Trimite formularul';
+        document.getElementById('spinner').classList.add('hidden');
+        btn.disabled = false;
+      }
+    });
+
+    function showSuccess() {
+      document.getElementById('successOverlay').classList.remove('hidden');
+    }
+
+    function resetForm() {
+      document.getElementById('successOverlay').classList.add('hidden');
+      document.getElementById('form230').reset();
+      signaturePad.clear();
+      required.forEach(id => hideErr(id));
+    }
+  </script>
+</body>
+</html>
