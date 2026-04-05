@@ -31,11 +31,9 @@ git init
 git add .
 git commit -m "Initial commit – Formular 230"
 git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/formular230.git
+git remote add origin https://github.com/dragomir88/formular230.git
 git push -u origin main
 ```
-
-Replace `YOUR_USERNAME` with your GitHub username.
 
 ---
 
@@ -44,7 +42,7 @@ Replace `YOUR_USERNAME` with your GitHub username.
 1. In your GitHub repo → **Settings** → **Pages**
 2. Under **Source**, select **GitHub Actions**
 3. The workflow (`.github/workflows/deploy.yml`) will trigger automatically on push
-4. Your site will be live at: `https://YOUR_USERNAME.github.io/formular230/`
+4. Your site will be live at: `https://dragomir88.github.io/formular230/`
 
 ---
 
